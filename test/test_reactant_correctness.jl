@@ -9,12 +9,19 @@ using SeawaterPolynomials: TEOS10EquationOfState
 # Helper to generate all combinations
 all_combos(xs...) = vec(collect(Iterators.product(xs...)))
 
+use_mpi = get(ENV, "USE_MPI", "false") == "true"
+
 @testset "Reactant correctness" begin
     @info "Testing Reactant correctness (comparing vanilla Oceananigans vs ReactantState)..."
 
     # Get vanilla architecture from TEST_ARCHITECTURE env var (set by reactant_test_utils.jl)
     vanilla_arch = get(ENV, "TEST_ARCHITECTURE", "CPU") == "GPU" ? GPU() : CPU()
     reactant_arch = ReactantState()
+    if use_mpi
+        vanilla_arch = Distributed(vanilla_arch)
+        # reactant_arch = Distributed(reactant_arch) # would like to be able to do this
+        reactant_arch = Distributed(get(ENV, "TEST_ARCHITECTURE", "CPU") == "GPU" ? GPU() : CPU()) # have to do this for now
+    end
 
     # Field locations to test
     all_locations = all_combos((Center, Face), (Center, Face), (Center, Face))

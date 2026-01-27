@@ -281,8 +281,19 @@ CUDA.allowscalar() do
 
     # Tests for Reactant correctness (comparing vanilla vs ReactantState)
     if group == :reactant_correctness || group == :all
-        @testset "Reactant correctness tests" begin
+        # Single process
+        @testset "Reactant correctness tests (single process)" begin
             include("test_reactant_correctness.jl")
+        end
+
+        # MPI
+        @testset "Reactant correctness tests (MPI)" begin
+            using MPI
+            nranks = 2 
+            test_file = joinpath(@__DIR__, )
+            withenv("USE_MPI" => "true") do
+                run(`$(MPI.mpiexec()) -n $nranks $(Base.julia_cmd()) --project=$(Base.active_project()) test_reactant_correctness.jl`)
+            end
         end
     end
 
